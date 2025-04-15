@@ -1,5 +1,8 @@
 package me.scannorone.datastructures
 
+import kotlin.math.max
+import kotlin.math.min
+
 class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) {
 
     private val size = source.size
@@ -59,22 +62,19 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
     }
 
     private fun queryRange(nodeIndex: Int, start: Int, end: Int, queryStart: Int, queryEnd: Int): T? {
-        if (tree[nodeIndex] == null || queryEnd < start || queryStart > end) {
-            return null
-        }
-
-        if (queryStart <= start && end <= queryEnd) {
-            return tree[nodeIndex]
-        }
-
-        val mid = start + (end - start) / 2
-        val leftResult = queryRange(nodeIndex * 2, start, mid, queryStart, queryEnd)
-        val rightResult = queryRange(nodeIndex * 2 + 1, mid + 1, end, queryStart, queryEnd)
-
         return when {
-            leftResult == null -> rightResult
-            rightResult == null -> leftResult
-            else -> operation(leftResult, rightResult)
+            queryStart > queryEnd -> null
+            queryStart == start && queryEnd == end -> tree[nodeIndex]
+            else -> {
+                val mid = start + (end - start) / 2
+                val leftResult = queryRange(nodeIndex * 2, start, mid, queryStart, min(queryEnd, mid))
+                val rightResult = queryRange(nodeIndex * 2 + 1, mid + 1, end, max(queryStart, mid + 1), queryEnd)
+                when {
+                    leftResult == null -> rightResult
+                    rightResult == null -> leftResult
+                    else -> operation(leftResult, rightResult)
+                }
+            }
         }
     }
 }
