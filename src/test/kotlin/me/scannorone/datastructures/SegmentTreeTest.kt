@@ -218,4 +218,111 @@ class SegmentTreeTest {
         assertTrue(andTree[2..3]!!)  // true && true
         assertFalse(andTree[3..4]!!)  // true && false
     }
+
+    private fun gcd(a: Int, b: Int): Int {
+        return if (b == 0) a else gcd(b, a % b)
+    }
+
+    private fun lcm(a: Int, b: Int): Int {
+        return if (a == 0 || b == 0) 0 else (a / gcd(a, b)) * b
+    }
+
+    @Test
+    fun testGcdSegmentTree() {
+        val nums = listOf(48, 36, 120, 24, 16)
+        val gcdTree = SegmentTree(nums) { a, b -> gcd(a, b) }
+
+        // The GCD of the entire array
+        assertEquals(4, gcdTree[0..4])
+
+        // GCD of various ranges
+        assertEquals(12, gcdTree[0..1])  // gcd(48, 36) = 12
+        assertEquals(12, gcdTree[0..2])  // gcd(48, 36, 120) = 12
+        assertEquals(8, gcdTree[2..4])   // gcd(120, 24, 16) = 8
+        assertEquals(8, gcdTree[3..4])   // gcd(24, 16) = 8
+
+        // GCD of single elements
+        assertEquals(48, gcdTree[0..0])
+        assertEquals(120, gcdTree[2..2])
+
+        // Test updates
+        gcdTree.update(1, 18)  // Change 36 to 18
+        assertEquals(6, gcdTree[0..1])   // gcd(48, 18) = 6
+        assertEquals(6, gcdTree[0..2])   // gcd(48, 18, 120) = 6
+
+        gcdTree.update(3, 15)  // Change 24 to 15
+        assertEquals(1, gcdTree[3..4])   // gcd(15, 16) = 1 (relatively prime)
+    }
+
+    @Test
+    fun testLcmSegmentTree() {
+        val nums = listOf(4, 6, 8, 10, 12)
+        val lcmTree = SegmentTree(nums) { a, b -> lcm(a, b) }
+
+        // The LCM of the entire array
+        assertEquals(120, lcmTree[0..4])
+
+        // LCM of various ranges
+        assertEquals(12, lcmTree[0..1])   // lcm(4, 6) = 12
+        assertEquals(24, lcmTree[0..2])   // lcm(4, 6, 8) = 24
+        assertEquals(120, lcmTree[2..4])  // lcm(8, 10, 12) = 120
+        assertEquals(60, lcmTree[3..4])   // lcm(10, 12) = 60
+
+        // LCM of single elements
+        assertEquals(4, lcmTree[0..0])
+        assertEquals(8, lcmTree[2..2])
+
+        // Test with zero
+        val numsWithZero = listOf(4, 0, 8, 10, 12)
+        val lcmTreeWithZero = SegmentTree(numsWithZero) { a, b -> lcm(a, b) }
+
+        assertEquals(0, lcmTreeWithZero[0..1])  // lcm(4, 0) = 0
+        assertEquals(0, lcmTreeWithZero[0..4])  // lcm of any range containing zero is zero
+        assertEquals(120, lcmTreeWithZero[2..4])  // lcm without zero
+
+        // Test updates
+        lcmTree.update(1, 9)  // Change 6 to 9
+        assertEquals(36, lcmTree[0..1])  // lcm(4, 9) = 36
+
+        lcmTree.update(3, 15)  // Change 10 to 15
+        assertEquals(60, lcmTree[3..4])  // lcm(15, 12) = 60
+    }
+
+    @Test
+    fun testCombinedGcdLcmOperations() {
+        val nums = listOf(12, 18, 24, 36)
+
+        // Create two trees with the same data but different operations
+        val gcdTree = SegmentTree(nums) { a, b -> gcd(a, b) }
+        val lcmTree = SegmentTree(nums) { a, b -> lcm(a, b) }
+
+        // Test the mathematical identity: gcd(a,b) * lcm(a,b) = a * b (when a and b are positive)
+        for (i in 0 until nums.size - 1) {
+            for (j in i + 1 until nums.size) {
+                val a = nums[i]
+                val b = nums[j]
+                val calculatedGcd = gcdTree[i..j]!!
+                val calculatedLcm = lcmTree[i..j]!!
+
+                // This only holds for ranges of exactly 2 elements
+                if (j - i == 1) {
+                    assertEquals(a * b, calculatedGcd * calculatedLcm)
+                }
+            }
+        }
+
+        // Test relationship between GCD and LCM for the entire array
+        val gcdOfAll = gcdTree[0..3]!!
+        val lcmOfAll = lcmTree[0..3]!!
+
+        // The LCM must be divisible by each element
+        for (num in nums) {
+            assertEquals(0, lcmOfAll % num)
+        }
+
+        // The GCD must be a divisor of each element
+        for (num in nums) {
+            assertEquals(0, num % gcdOfAll)
+        }
+    }
 }
