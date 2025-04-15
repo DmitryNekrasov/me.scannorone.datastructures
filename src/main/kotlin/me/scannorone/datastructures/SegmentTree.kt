@@ -14,11 +14,11 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
         }
     }
 
-    fun queryRange(queryStart: Int, queryEnd: Int): T? {
-        if (size == 0 || queryStart > queryEnd || queryStart < 0 || queryEnd >= size) {
+    operator fun get(range: IntRange): T? {
+        if (size == 0 || range.start < 0 || range.endInclusive >= size) {
             return null
         }
-        return queryRange(1, 0, size - 1, queryStart, queryEnd)
+        return queryRange(1, 0, size - 1, range.start, range.endInclusive)
     }
 
     fun update(index: Int, newValue: T) {
