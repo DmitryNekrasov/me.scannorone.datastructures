@@ -282,17 +282,12 @@ class SegmentTreeTest {
         val lcmTree = SegmentTree(nums) { a, b -> lcm(a, b) }
 
         // Test the mathematical identity: gcd(a,b) * lcm(a,b) = a * b (when a and b are positive)
-        for (i in 0 until nums.size - 1) {
-            for (j in i + 1 until nums.size) {
-                val a = nums[i]
-                val b = nums[j]
-                val calculatedGcd = gcdTree[i..j]!!
-                val calculatedLcm = lcmTree[i..j]!!
-
-                if (j - i == 1) {
-                    assertEquals(a * b, calculatedGcd * calculatedLcm)
-                }
-            }
+        for (i in 0..<(nums.size - 1)) {
+            val a = nums[i]
+            val b = nums[i + 1]
+            val calculatedGcd = gcdTree[i..(i + 1)]!!
+            val calculatedLcm = lcmTree[i..(i + 1)]!!
+            assertEquals(a * b, calculatedGcd * calculatedLcm)
         }
 
         val gcdOfAll = gcdTree[0..3]!!
