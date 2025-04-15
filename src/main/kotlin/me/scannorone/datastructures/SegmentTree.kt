@@ -18,12 +18,11 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
         return queryRange(1, 0, size - 1, queryStart, queryEnd)
     }
 
-    fun update(index: Int, newValue: T): Boolean {
-        if (index !in 0..<size) {
-            return false
-        }
+    fun update(index: Int, newValue: T) {
+        if (index !in 0..<size) throw IndexOutOfBoundsException(
+            "index ($index) is out of segment tree bounds: [0..$size)"
+        )
         update(1, 0, size - 1, index, newValue)
-        return true
     }
 
     private fun build(source: Collection<T>, nodeIndex: Int, start: Int, end: Int) {
