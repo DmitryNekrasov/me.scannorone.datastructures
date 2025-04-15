@@ -3,6 +3,11 @@ package me.scannorone.datastructures
 import kotlin.math.max
 import kotlin.math.min
 
+/**
+ * A generic segment tree implementation that supports range queries and single element updates.
+ * @param source The initial collection of elements
+ * @param operation The binary operation to be applied on tree nodes (e.g., min, max, sum)
+ */
 class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) {
 
     private val size = source.size
@@ -14,6 +19,11 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
         }
     }
 
+    /**
+     * Queries the segment tree for a result in the given range.
+     * @param range The range to query
+     * @return The result of the operation applied to all elements in the range, or null if invalid range
+     */
     operator fun get(range: IntRange): T? {
         if (size == 0 || range.start < 0 || range.endInclusive >= size) {
             return null
@@ -21,6 +31,12 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
         return queryRange(1, 0, size - 1, range.start, range.endInclusive)
     }
 
+    /**
+     * Updates the value at a specific index in the segment tree.
+     * @param index The index to update
+     * @param newValue The new value to set
+     * @throws IndexOutOfBoundsException if the index is outside the valid range
+     */
     fun update(index: Int, newValue: T) {
         if (index !in 0..<size) throw IndexOutOfBoundsException(
             "index ($index) is out of segment tree bounds: [0..$size)"
