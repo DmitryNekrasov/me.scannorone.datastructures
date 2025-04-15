@@ -301,4 +301,68 @@ class SegmentTreeTest {
             assertEquals(0, num % gcdOfAll)
         }
     }
+
+    @Test
+    fun testGetOrDefault() {
+        // Test with integers
+        val nums = listOf(1, 3, 5, 7, 9)
+        val sumTree = SegmentTree(nums) { a, b -> a + b }
+
+        // Valid ranges should return actual computed value
+        assertEquals(15, sumTree.getOrDefault(1..3, 0))  // 3 + 5 + 7 = 15
+        assertEquals(25, sumTree.getOrDefault(0..4, 0))  // Sum of all elements
+        assertEquals(9, sumTree.getOrDefault(4..4, 0))   // Single element
+
+        // Invalid ranges should return default value
+        assertEquals(0, sumTree.getOrDefault(-1..3, 0))   // Start out of bounds
+        assertEquals(0, sumTree.getOrDefault(0..5, 0))    // End out of bounds
+        assertEquals(0, sumTree.getOrDefault(-1..5, 0))   // Both out of bounds
+        assertEquals(0, sumTree.getOrDefault(3..1, 0))    // Start > End
+
+        // Empty tree case
+        val emptyTree = SegmentTree<Int>(emptyList()) { a, b -> a + b }
+        assertEquals(42, emptyTree.getOrDefault(0..0, 42))
+
+        // Test with different default values
+        assertEquals(100, sumTree.getOrDefault(-1..3, 100))
+        assertEquals(-1, sumTree.getOrDefault(0..5, -1))
+
+        // Test with strings
+        val strings = listOf("a", "b", "c", "d", "e")
+        val concatTree = SegmentTree(strings) { a, b -> a + b }
+
+        assertEquals("bcd", concatTree.getOrDefault(1..3, "default"))
+        assertEquals("default", concatTree.getOrDefault(-1..3, "default"))
+        assertEquals("default", concatTree.getOrDefault(1..5, "default"))
+
+        // Test with custom objects
+        data class Point(val x: Int, val y: Int)
+        val defaultPoint = Point(0, 0)
+
+        val points = listOf(
+            Point(1, 2),
+            Point(3, 4),
+            Point(5, 6),
+            Point(7, 8)
+        )
+
+        val pointTree = SegmentTree(points) { a, b -> Point(a.x + b.x, a.y + b.y) }
+
+        assertEquals(Point(8, 10), pointTree.getOrDefault(1..2, defaultPoint))
+        assertEquals(defaultPoint, pointTree.getOrDefault(1..5, defaultPoint))
+
+        // Test with boolean operations
+        val booleans = listOf(true, false, true, true, false)
+
+        val orTree = SegmentTree(booleans) { a, b -> a || b }
+        val andTree = SegmentTree(booleans) { a, b -> a && b }
+
+        assertTrue(orTree.getOrDefault(0..4, false))
+        assertFalse(orTree.getOrDefault(0..5, false))
+        assertTrue(orTree.getOrDefault(0..5, true))
+
+        assertFalse(andTree.getOrDefault(0..4, true))
+        assertTrue(andTree.getOrDefault(0..5, true))
+        assertFalse(andTree.getOrDefault(0..5, false))
+    }
 }

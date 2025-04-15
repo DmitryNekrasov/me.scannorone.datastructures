@@ -31,6 +31,17 @@ class SegmentTree<T>(source: Collection<T>, private val operation: (T, T) -> T) 
         return queryRange(1, 0, size - 1, range.start, range.endInclusive)
     }
 
+
+    /**
+     * Queries the segment tree for a result in the given range, returning a default value if the range is invalid or empty.
+     * @param range The range to query
+     * @param default The default value to return if the query range is invalid or no result exists.
+     * @return The result of the operation applied to all elements in the range, or the default value if invalid range.
+     */
+    fun getOrDefault(range: IntRange, default: T): T {
+        return this[range] ?: default
+    }
+
     /**
      * Updates the value at a specific index in the segment tree.
      * @param index The index to update
