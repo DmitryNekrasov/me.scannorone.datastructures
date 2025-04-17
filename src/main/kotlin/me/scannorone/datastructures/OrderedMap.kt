@@ -61,8 +61,14 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
      * Returns true if the map maps one or more keys to the specified value.
      */
     override fun containsValue(value: V): Boolean {
-        // Traverse the tree in-order to find the value
-        return inOrderTraversal(root).any { it.value == value }
+        // Traverse the tree using the efficient iterator
+        val iterator = TreeIterator()
+        while (iterator.hasNext()) {
+            if (iterator.next().value == value) {
+                return true
+            }
+        }
+        return false
     }
 
     /**
@@ -124,7 +130,7 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
 
             override fun iterator(): MutableIterator<K> {
                 return object : MutableIterator<K> {
-                    private val nodeIterator = inOrderTraversal(root).iterator()
+                    private val nodeIterator = TreeIterator()
                     private var lastNode: Node? = null
 
                     override fun hasNext(): Boolean = nodeIterator.hasNext()
@@ -167,7 +173,7 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
 
             override fun iterator(): MutableIterator<V> {
                 return object : MutableIterator<V> {
-                    private val nodeIterator = inOrderTraversal(root).iterator()
+                    private val nodeIterator = TreeIterator()
                     private var lastNode: Node? = null
 
                     override fun hasNext(): Boolean = nodeIterator.hasNext()
@@ -207,7 +213,7 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
 
             override fun iterator(): MutableIterator<MutableMap.MutableEntry<K, V>> {
                 return object : MutableIterator<MutableMap.MutableEntry<K, V>> {
-                    private val nodeIterator = inOrderTraversal(root).iterator()
+                    private val nodeIterator = TreeIterator()
                     private var lastNode: Node? = null
 
                     override fun hasNext(): Boolean = nodeIterator.hasNext()
@@ -373,6 +379,7 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
         var yOriginalColor = y.color
         var x: Node?
 
+        // Fast path for leaf nodes or nodes with only one child
         when {
             z.left == NIL -> {
                 // Case 1: Node has no left child
@@ -386,21 +393,29 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
             }
             else -> {
                 // Case 3: Node has both children
+                // Find the successor (minimum in right subtree)
                 y = minimum(z.right!!)
                 yOriginalColor = y.color
                 x = y.right
 
+                // Special case: successor is immediate right child
                 if (y.parent == z) {
+                    // Just set parent pointer for x
                     x?.parent = y
                 } else {
+                    // Replace successor with its right child
                     transplant(y, y.right!!)
+                    // Update successor's right pointer
                     y.right = z.right
                     y.right?.parent = y
                 }
 
+                // Replace z with its successor
                 transplant(z, y)
+                // Update successor's left pointer
                 y.left = z.left
                 y.left?.parent = y
+                // Preserve z's color
                 y.color = z.color
             }
         }
@@ -417,69 +432,88 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
     private fun fixDelete(node: Node) {
         var x = node
 
+        // If x is red, we can just color it black and be done
+        if (x.color == Color.RED) {
+            x.color = Color.BLACK
+            return
+        }
+
+        // If x is the root, we're done (root is always black)
+        if (x == root) {
+            return
+        }
+
         while (x != root && x.color == Color.BLACK) {
-            if (x == x.parent?.left) {
+            val parent = x.parent ?: break
+
+            if (x == parent.left) {
                 // X is left child
-                var w = x.parent?.right ?: break
+                var w = parent.right ?: break
 
                 if (w.color == Color.RED) {
                     // Case 1: Sibling is red
                     w.color = Color.BLACK
-                    x.parent?.color = Color.RED
-                    leftRotate(x.parent ?: break)
-                    w = x.parent?.right ?: break
+                    parent.color = Color.RED
+                    leftRotate(parent)
+                    w = parent.right ?: break
                 }
 
-                if (w.left?.color == Color.BLACK && w.right?.color == Color.BLACK) {
+                val wLeftBlack = w.left?.color == Color.BLACK
+                val wRightBlack = w.right?.color == Color.BLACK
+
+                if (wLeftBlack && wRightBlack) {
                     // Case 2: Sibling has two black children
                     w.color = Color.RED
-                    x = x.parent ?: break
+                    x = parent
                 } else {
-                    if (w.right?.color == Color.BLACK) {
+                    if (wRightBlack) {
                         // Case 3: Sibling's right child is black
                         w.left?.color = Color.BLACK
                         w.color = Color.RED
                         rightRotate(w)
-                        w = x.parent?.right ?: break
+                        w = parent.right ?: break
                     }
 
                     // Case 4: Sibling's right child is red
-                    w.color = x.parent?.color ?: break
-                    x.parent?.color = Color.BLACK
+                    w.color = parent.color
+                    parent.color = Color.BLACK
                     w.right?.color = Color.BLACK
-                    leftRotate(x.parent ?: break)
+                    leftRotate(parent)
                     x = root ?: break
                 }
             } else {
                 // X is right child
-                var w = x.parent?.left ?: break
+                var w = parent.left ?: break
 
                 if (w.color == Color.RED) {
                     // Case 1: Sibling is red
                     w.color = Color.BLACK
-                    x.parent?.color = Color.RED
-                    rightRotate(x.parent ?: break)
-                    w = x.parent?.left ?: break
+                    parent.color = Color.RED
+                    rightRotate(parent)
+                    w = parent.left ?: break
                 }
 
-                if (w.right?.color == Color.BLACK && w.left?.color == Color.BLACK) {
+                val wLeftBlack = w.left?.color == Color.BLACK
+                val wRightBlack = w.right?.color == Color.BLACK
+
+                if (wRightBlack && wLeftBlack) {
                     // Case 2: Sibling has two black children
                     w.color = Color.RED
-                    x = x.parent ?: break
+                    x = parent
                 } else {
-                    if (w.left?.color == Color.BLACK) {
+                    if (wLeftBlack) {
                         // Case 3: Sibling's left child is black
                         w.right?.color = Color.BLACK
                         w.color = Color.RED
                         leftRotate(w)
-                        w = x.parent?.left ?: break
+                        w = parent.left ?: break
                     }
 
                     // Case 4: Sibling's left child is red
-                    w.color = x.parent?.color ?: break
-                    x.parent?.color = Color.BLACK
+                    w.color = parent.color
+                    parent.color = Color.BLACK
                     w.left?.color = Color.BLACK
-                    rightRotate(x.parent ?: break)
+                    rightRotate(parent)
                     x = root ?: break
                 }
             }
@@ -547,6 +581,10 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
     // Helper method to find the minimum node in a subtree
     private fun minimum(node: Node): Node {
         var current = node
+        // Fast path for leaf nodes
+        if (current.left == NIL) return current
+
+        // Traverse left until we reach the leftmost node
         while (current.left != NIL) {
             current = current.left!!
         }
@@ -562,5 +600,41 @@ class OrderedMap<K : Comparable<K>, V> : MutableMap<K, V> {
         result.add(node)
         result.addAll(inOrderTraversal(node.right))
         return result
+    }
+
+    // Iterator class for efficient in-order traversal without building a full list
+    private inner class TreeIterator : Iterator<Node> {
+        private val stack = ArrayDeque<Node>()
+        private var current: Node? = null
+
+        init {
+            // Initialize the stack with leftmost path
+            pushLeftPath(root)
+        }
+
+        private fun pushLeftPath(node: Node?) {
+            var current = node
+            while (current != null && current != NIL) {
+                stack.addLast(current)
+                current = current.left
+            }
+        }
+
+        override fun hasNext(): Boolean = stack.isNotEmpty()
+
+        override fun next(): Node {
+            if (!hasNext()) throw NoSuchElementException()
+
+            // Get the next node in in-order traversal
+            val node = stack.removeLast()
+            current = node
+
+            // If this node has a right child, push the left path starting from the right child
+            if (node.right != null && node.right != NIL) {
+                pushLeftPath(node.right)
+            }
+
+            return node
+        }
     }
 }
